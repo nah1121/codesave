@@ -1,90 +1,149 @@
 import random
+from collections import Counter
 
-
-# List of possible restaurant orders
-orders = (
-    "Cheeseburger with Fries",
-    "Margherita Pizza",
-    "Grilled Chicken Caesar Salad",
-    "Spaghetti Bolognese",
-    "California Roll",
-    "Veggie Burrito",
-    "BBQ Ribs with Coleslaw",
-    "Chicken Parmesan",
-    "Fish Tacos",
-    "Mushroom Risotto"
+# Menu stored as tuples with item name and price
+menu = (
+    ("Cheeseburger with Fries", 12),
+    ("Margherita Pizza", 14),
+    ("Grilled Chicken Caesar Salad", 11),
+    ("Spaghetti Bolognese", 13),
+    ("California Roll", 9),
+    ("Veggie Burrito", 8),
+    ("BBQ Ribs with Coleslaw", 18),
+    ("Chicken Parmesan", 16),
+    ("Fish Tacos", 10),
+    ("Mushroom Risotto", 15)
 )
 
-pices = [
-    12,  # Cheeseburger with Fries
-    14,  # Margherita Pizza
-    11,  # Grilled Chicken Caesar Salad
-    13,  # Spaghetti Bolognese
-    9,   # California Roll
-    8,   # Veggie Burrito
-    18,  # BBQ Ribs with Coleslaw
-    16,  # Chicken Parmesan
-    10,  # Fish Tacos
-    15   # Mushroom Risotto
-]
+# Files to store orders and unique customers
+orders_file = "orders.txt"
+customers_file = "customers.txt"
 
-ord_ord = {}
+def waits():
+    input("Press Enter to continue...")
 
-orders_price = dict(zip(orders, pices))
+def show_menu():
+    print("Menu:")
+    for idx in range(len(menu)):
+        print(f"{idx + 1}. {menu[idx][0]} - ${menu[idx][1]}")
 
-cust_ord = []
+def save_order(order_id, name, items, total_price):
+    with open(orders_file, "a") as file:
+        file.write(f"{order_id},{name},{'|'.join(items)},{total_price}\n")
+    save_customer(name)
 
+def save_customer(name):
+    customers = load_customers()
+    if name not in customers:
+        with open(customers_file, "a") as file:
+            file.write(f"{name}\n")
 
-
-ord_id = int((random.random()*1000000000000))
-from collections import Counter
-items = Counter()
-
-fin_price = 0
-name = ''
-
-def menu():
-    print("Welcome to **** restaurant")
-    name = input("Can I get your name please?: ")
-    seat = input("Do you want the menu or you know what to choose?\n"
-                 "1. Menue\n"
-                 "2. Order\n")
-    if seat=='1':
-        print("These are the orders")
-        for i in range(len(orders)):
-            print(f"{i+1}. {orders[i]} -- {pices[i]}$")
-    else:
+def load_orders():
+    orders = []
+    try:
+        with open(orders_file, "r") as file:
+            for line in file:
+                order_id, name, items, total_price = line.strip().split(",")
+                orders.append((int(order_id), name, items.split("|"), float(total_price)))
+    except FileNotFoundError:
         pass
-    ord = input("Enter a number separated by space for all your orders: ").split()
-    cust_ord.extend(ord)
-    cust_ord.sort()
-    items.update(cust_ord)
-    print(items)
+    return orders
 
-def ords():
-    count = 0
-    tot_price = 0
-    print()
-    print("Your order is: ")
-    for i in range(len(items)):
-        count += 1
-        key_li = list(items.keys())
-        val_li = list(items.values())
-        tot_price += pices[int(key_li[i])-1] * val_li[i]
-        if val_li[i]>1:
-            print(f"{count}. {orders[int(key_li[i])-1]} - {pices[int(key_li[i])-1]} * {val_li[i]}")
+def load_customers():
+    customers = set()
+    try:
+        with open(customers_file, "r") as file:
+            for line in file:
+                customers.add(line.strip())
+    except FileNotFoundError:
+        pass
+    return customers
+
+def place_order():
+    name = input("Enter your name: ")
+    show_menu()
+    order_numbers = input("Enter item numbers separated by spaces: ").split()
+    selected_items = []
+    total_price = 0
+    for i in order_numbers:
+        if i.isdigit() and 1 <= int(i) <= len(menu):
+            selected_items.append(menu[int(i) - 1][0])
+            total_price += menu[int(i) - 1][1]
+    order_id = random.randint(100000, 999999)
+    save_order(order_id, name, selected_items, total_price)
+    print(f"Order placed! Your order ID is {order_id}")
+    waits()
+
+def find_order():
+    order_id = input("Enter your order ID to search: ")
+    orders = load_orders()
+    for order in orders:
+        if str(order[0]) == order_id:
+            item_counts = Counter(order[2])
+            print("\n--- Order Found ---")
+            print(f"Order ID   : {order[0]}")
+            print(f"Customer   : {order[1]}")
+            print("Items      :")
+            for item, count in item_counts.items():
+                print(f"  - {item} {'* ' + str(count) if count > 1 else ''}")
+            print(f"Total Price: ${order[3]:.2f}\n")
+            waits()
+            return
+    print("Order not found!")
+    waits()
+
+def remove_order():
+    order_id = input("Enter your order ID to cancel: ")
+    orders = load_orders()
+    updated_orders = [order for order in orders if str(order[0]) != order_id]
+    with open(orders_file, "w") as file:
+        for order in updated_orders:
+            file.write(f"{order[0]},{order[1]},{'|'.join(order[2])},{order[3]}\n")
+    print("Order canceled!")
+    waits()
+
+def generate_summary():
+    orders = load_orders()
+    customers = load_customers()
+    total_revenue = sum(order[3] for order in orders)
+    item_count = Counter()
+    for order in orders:
+        for item in order[2]:
+            item_count[item] += 1
+    top_item = item_count.most_common(1)[0] if item_count else ("None", 0)
+    sorted_orders = sorted(orders, key=lambda x: x[3], reverse=True)
+    print("\n--- REPORT ---")
+    print(f"Total Revenue: ${total_revenue}")
+    print(f"Total Unique Customers: {len(customers)}")
+    print(f"Most Ordered Item: {top_item[0]} ({top_item[1]} times)")
+    print("Orders sorted by price:")
+    for order in sorted_orders:
+        print(f"Order ID: {order[0]}, Total Price: ${order[3]}")
+    waits()
+
+def main():
+    while True:
+        print("\nOrder Management System")
+        print("1. Place Order")
+        print("2. Find Order")
+        print("3. Cancel Order")
+        print("4. Generate Report")
+        print("5. Exit")
+        choice = input("Choose an option: ")
+        if choice == "1":
+            place_order()
+        elif choice == "2":
+            find_order()
+        elif choice == "3":
+            remove_order()
+        elif choice == "4":
+            generate_summary()
+        elif choice == "5":
+            print("Goodbye!")
+            break
         else:
-            print(f"{count}. {orders[int(key_li[i])-1]} - {pices[int(key_li[i])-1]}")
+            print("Invalid option. Try again.")
+        waits()
 
-    fin_price = tot_price + tot_price*.15
-
-    place_ord = input("Do you want to place the order or do you want to change it?\n"
-                      "1. Place order\n"
-                      "2. Edit\n")
-    if place_ord=='1':
-        print(f"Your order with a unique id of {ord_id} has been placed")
-        print(f"The total is {fin_price} with 15% VAT")
-
-
-menu()
-ords()
+if __name__ == "__main__":
+    main()

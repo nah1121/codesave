@@ -1,0 +1,3 @@
+766332,nah,Cheeseburger with Fries|California Roll|Margherita Pizza|Cheeseburger with Fries|Cheeseburger with Fries|Spaghetti Bolognese,72.0
+444196,5 8 6 4 2 1 7 8 9 6 3 5,,0.0
+256544,nah,California Roll|Chicken Parmesan|Spaghetti Bolognese|BBQ Ribs with Coleslaw|Veggie Burrito|Margherita Pizza|Cheeseburger with Fries|California Roll|Spaghetti Bolognese|California Roll,121.0
