@@ -143,7 +143,8 @@ def main():
             break
         else:
             print("Invalid option. Try again.")
-        waits()
+
 
 if __name__ == "__main__":
     main()
+#
